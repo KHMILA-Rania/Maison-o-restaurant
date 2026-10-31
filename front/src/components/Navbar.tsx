@@ -1,50 +1,63 @@
-
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
-const Navbar = () => {
+type NavbarProps = {
+  onBook: () => void
+}
+
+const Navbar = ({ onBook }: NavbarProps) => {
   const [menuOpen, setMenuOpen] = useState(false)
 
   const closeMenu = () => setMenuOpen(false)
 
+  // "Book a Table" is no longer a page, so it is not in this list anymore
   const links = [
-    { label: 'Home', href: '/' },
-    { label: 'About Us', href: '/aboutUs' },
-    { label: 'Why Choose', href: '/about#why-us' },
-    { label: 'Book a Table', href: '/reservation' },
+    { label: 'Home', to: '/' },
+    { label: 'About Us', to: '/aboutUs' },
+    { label: 'Why Choose', to: '/about#why-us' },
   ]
+
+  const handleBook = () => {
+    closeMenu()
+    onBook()
+  }
+
+  const linkClass =
+    'whitespace-nowrap text-xs uppercase tracking-wider text-white transition-colors duration-300 hover:text-[#d9a34d]'
 
   return (
     <header className="relative z-50 w-full border-b border-white/15 bg-[#111512] animate-fade-in">
       <nav className="mx-auto flex min-h-[76px] max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-12">
         {/* Logo */}
-        <a
-          href="/"
+        <Link
+          to="/"
           className="shrink-0 font-serif text-2xl tracking-wide text-white"
           onClick={closeMenu}
         >
           Maison<span className="text-[#d9a34d]">.</span>
-        </a>
+        </Link>
 
         {/* Desktop navigation */}
         <div className="hidden items-center gap-8 md:flex">
           {links.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className="whitespace-nowrap text-xs uppercase tracking-wider text-white transition-colors duration-300 hover:text-[#d9a34d]"
-            >
+            <Link key={link.label} to={link.to} className={linkClass}>
               {link.label}
-            </a>
+            </Link>
           ))}
+
+          {/* Opens the reservation panel */}
+          <button type="button" onClick={handleBook} className={linkClass}>
+            Book a Table
+          </button>
         </div>
 
-        {/* Desktop CTA */}
-        <a
-          href="/menu"
+        {/* Desktop CTA (one element only: no <a> inside <Link>) */}
+        <Link
+          to="/menu"
           className="hidden shrink-0 bg-[#d9a34d] px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-white transition-colors duration-300 hover:bg-[#bd8736] md:inline-flex"
         >
           View Menu
-        </a>
+        </Link>
 
         {/* Mobile menu toggle */}
         <button
@@ -89,23 +102,31 @@ const Navbar = () => {
         >
           <div className="mx-auto flex max-w-7xl flex-col">
             {links.map((link) => (
-              <a
+              <Link
                 key={link.label}
-                href={link.href}
+                to={link.to}
                 onClick={closeMenu}
                 className="border-b border-white/10 py-4 text-xs uppercase tracking-widest text-white transition-colors duration-300 hover:text-[#d9a34d]"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
 
-            <a
-              href="/menu"
+            <button
+              type="button"
+              onClick={handleBook}
+              className="border-b border-white/10 py-4 text-left text-xs uppercase tracking-widest text-white transition-colors duration-300 hover:text-[#d9a34d]"
+            >
+              Book a Table
+            </button>
+
+            <Link
+              to="/menu"
               onClick={closeMenu}
               className="mt-5 bg-[#d9a34d] px-5 py-4 text-center text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-[#bd8736]"
             >
               View Menu
-            </a>
+            </Link>
           </div>
         </div>
       )}
