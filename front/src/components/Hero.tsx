@@ -1,12 +1,10 @@
 "use client" // needed for Next.js App Router, harmless elsewhere
 
 import { useEffect, useRef,useState } from "react"
-import { Link } from "react-router-dom"
+
 import Reservation from "../pages/Reservation"
 
-/* ------------------------------------------------------------------ */
-/*  Intro animations (CSS, transform + opacity only)                   */
-/* ------------------------------------------------------------------ */
+
 const heroStyles = `
 :root { --hero-ease: cubic-bezier(0.16, 1, 0.3, 1); }
 
