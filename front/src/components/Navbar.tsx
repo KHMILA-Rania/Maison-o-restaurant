@@ -14,7 +14,7 @@ const Navbar = ({ onBook }: NavbarProps) => {
   const links = [
     { label: 'Home', to: '/' },
     { label: 'About Us', to: '/aboutUs' },
-    { label: 'Why Choose', to: '/about#why-us' },
+    { label: 'Events', to: '/coming-soon' },
   ]
 
   const handleBook = () => {

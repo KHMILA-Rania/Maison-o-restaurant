@@ -3,6 +3,7 @@
 
 import { useEffect, useRef } from "react"
 import type { CSSProperties } from "react"
+import { Link } from "react-router-dom"
 
 const styles = `
 .about-section {
@@ -266,13 +267,13 @@ const About = () => {
               is an invitation to experience something special.
             </p>
 
-            <a
-              href="#menu"
+            <Link
+              to="/menu"
               className="about-reveal mt-7 inline-flex items-center gap-3 rounded-full border border-[#c5a66b]/50 px-5 py-3 text-[9px] uppercase tracking-[0.2em] text-[#c5a66b] transition-all duration-300 hover:bg-[#c5a66b] hover:text-[#252b23]"
               style={delay(550)}
             >
               View menu <span aria-hidden="true">↗</span>
-            </a>
+            </Link>
           </div>
 
           {/* Food image with scroll fade */}

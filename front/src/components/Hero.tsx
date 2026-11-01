@@ -1,6 +1,8 @@
 "use client" // needed for Next.js App Router, harmless elsewhere
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef,useState } from "react"
+import { Link } from "react-router-dom"
+import Reservation from "../pages/Reservation"
 
 /* ------------------------------------------------------------------ */
 /*  Intro animations (CSS, transform + opacity only)                   */
@@ -69,6 +71,7 @@ const Hero = () => {
   const sectionRef = useRef<HTMLElement>(null)
   const textRef = useRef<HTMLDivElement>(null)
   const mediaRef = useRef<HTMLDivElement>(null)
+  const [booking, setBooking] = useState(false)
 
   /* ---------------------------------------------------------------- */
   /*  Scroll effects                                                   */
@@ -183,13 +186,13 @@ const Hero = () => {
               unforgettable dining experiences every time.
             </p>
 
-            <a
-              href="#reservation"
+            <button
+               onClick={() => setBooking(true)}
               className="hero-rise mt-9 inline-flex items-center gap-3 bg-[#d9a34d] px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-white transition-colors duration-300 hover:bg-[#bd8736]"
               style={delay(1450)}
             >
               Book Your Table <span aria-hidden="true">↗</span>
-            </a>
+            </button>
 
             <div
               className="hero-fade mt-10 flex items-center gap-3 text-xs text-white/50"
@@ -237,6 +240,7 @@ const Hero = () => {
           </span>
         </a>
       </section>
+       <Reservation open={booking} onClose={() => setBooking(false)} />
     </main>
   )
 }
