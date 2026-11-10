@@ -12,9 +12,9 @@ const HOURS = "Tue to Sun, 12:00 to 23:00"
 const MAP_URL = "https://maps.google.com"
 
 const explore = [
-  { label: "About", href: "#about" },
-  { label: "The room", href: "#gallery" },
-  { label: "Reviews", href: "#reviews" },
+  { label: "About", href: "/#about" },
+  { label: "The room", href: "/#gallery" },
+  { label: "Reviews", href: "/#reviews" },
   { label: "Directions", href: MAP_URL },
 ]
 
@@ -112,10 +112,32 @@ const delay = (ms: number) =>
   ({ "--delay": `${ms}ms` } as React.CSSProperties)
 
 /* ------------------------------------------------------------------ */
-/* Wireframe terrain: a slowly flowing mesh of mountains, drawn on a   */
-/* canvas. Pauses when off screen, draws one still frame when the      */
-/* visitor prefers reduced motion.                                     */
+/* Drifting olive leaves (fits "MaisonOlive"): outlined leaves in the  */
+/* same gold line style as before, tumbling slowly with a 3D flip,     */
+/* plus a few warm dust specks like candlelight. Pauses off screen,    */
+/* draws one still frame when the visitor prefers reduced motion.      */
+/*                                                                     */
+/* Replace the old `height` helper + `Terrain` function with this.     */
+/* Keep the `.ft-terrain` class on the canvas so the fade-in + mask    */
+/* from your CSS still works. Nothing else in the footer changes.      */
 /* ------------------------------------------------------------------ */
+type Leaf = {
+  x: number
+  y: number
+  size: number // half-length in px
+  depth: number // 0 far, 1 near
+  vy: number
+  swayAmp: number
+  swayFreq: number
+  phase: number
+  rot: number
+  vr: number
+  flip: number
+  vf: number
+}
+
+type Dust = { x: number; y: number; r: number; vy: number; tw: number; ph: number }
+
 function Terrain() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -126,17 +148,35 @@ function Terrain() {
     if (!ctx) return
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    const COLS = 72
-    const ROWS = 46
-    const xs = new Float32Array(COLS * ROWS)
-    const ys = new Float32Array(COLS * ROWS)
 
     let w = 0
     let h = 0
     let dpr = 1
     let raf = 0
     let visible = true
-    const start = performance.now()
+    let last = performance.now()
+    let leaves: Leaf[] = []
+    let dust: Dust[] = []
+
+    const rand = (a: number, b: number) => a + Math.random() * (b - a)
+
+    const makeLeaf = (spawnAbove: boolean): Leaf => {
+      const depth = Math.random()
+      return {
+        x: rand(-0.05, 1.05) * w,
+        y: spawnAbove ? rand(-0.2, -0.02) * h : rand(0, 1) * h,
+        size: 10 + depth * 30,
+        depth,
+        vy: 8 + depth * 22, // px per second, near leaves fall faster
+        swayAmp: rand(14, 48) * (0.5 + depth),
+        swayFreq: rand(0.25, 0.6),
+        phase: rand(0, Math.PI * 2),
+        rot: rand(0, Math.PI * 2),
+        vr: rand(-0.35, 0.35),
+        flip: rand(0, Math.PI * 2),
+        vf: rand(0.4, 1.1),
+      }
+    }
 
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 2)
@@ -145,72 +185,107 @@ function Terrain() {
       h = rect.height
       canvas.width = Math.round(w * dpr)
       canvas.height = Math.round(h * dpr)
-      draw(reduce ? 0 : (performance.now() - start) / 1000)
+
+      const count = w < 640 ? 16 : 30
+      leaves = Array.from({ length: count }, () => makeLeaf(false))
+      // draw far leaves first so near ones overlap them
+      leaves.sort((a, b) => a.depth - b.depth)
+      dust = Array.from({ length: w < 640 ? 24 : 50 }, () => ({
+        x: rand(0, w),
+        y: rand(0, h),
+        r: rand(0.6, 1.8),
+        vy: rand(-6, -2), // dust drifts up like heat from the kitchen
+        tw: rand(0.5, 1.5),
+        ph: rand(0, Math.PI * 2),
+      }))
+      draw(0)
     }
 
-    const height = (x: number, z: number) =>
-      Math.sin(x * 0.9 + z * 0.35) * 0.5 +
-      Math.sin(x * 0.4 - z * 0.6 + 1.3) * 0.7 +
-      Math.sin(x * 1.7 + z * 0.9) * 0.22 +
-      Math.sin(z * 0.22 + x * 0.15) * 0.9
+    const drawLeaf = (l: Leaf, t: number) => {
+      const sway = Math.sin(t * l.swayFreq + l.phase) * l.swayAmp
+      const x = l.x + sway
+      const fx = Math.cos(l.flip) // squashes the leaf like it is turning in the air
+      const L = l.size
+      const W = l.size * 0.28
+
+      ctx.save()
+      ctx.translate(x, l.y)
+      ctx.rotate(l.rot)
+      ctx.scale(Math.max(Math.abs(fx), 0.12), 1)
+
+      const alpha = 0.16 + l.depth * 0.5
+
+      // leaf body
+      ctx.beginPath()
+      ctx.moveTo(0, -L)
+      ctx.bezierCurveTo(W * 1.5, -L * 0.45, W * 1.3, L * 0.5, 0, L)
+      ctx.bezierCurveTo(-W * 1.3, L * 0.5, -W * 1.5, -L * 0.45, 0, -L)
+      ctx.closePath()
+      ctx.fillStyle = `rgba(217, 163, 77, ${alpha * 0.12})`
+      ctx.fill()
+      ctx.lineWidth = 0.9
+      ctx.strokeStyle = `rgba(217, 163, 77, ${alpha})`
+      ctx.stroke()
+
+      // midrib + a few veins
+      ctx.beginPath()
+      ctx.moveTo(0, -L * 0.9)
+      ctx.lineTo(0, L * 1.1) // tiny stem
+      for (let k = -2; k <= 2; k++) {
+        const py = k * L * 0.3
+        ctx.moveTo(0, py)
+        ctx.lineTo(W * 0.9, py - L * 0.16)
+        ctx.moveTo(0, py)
+        ctx.lineTo(-W * 0.9, py - L * 0.16)
+      }
+      ctx.strokeStyle = `rgba(217, 163, 77, ${alpha * 0.6})`
+      ctx.lineWidth = 0.6
+      ctx.stroke()
+
+      ctx.restore()
+    }
 
     const draw = (t: number) => {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ctx.clearRect(0, 0, w, h)
 
-      const horizon = h * 0.34
-      const cx = w / 2
-      const amp = h * 0.075
-      const speed = 0.55
+      for (const l of leaves) drawLeaf(l, t)
 
-      for (let r = 0; r < ROWS; r++) {
-        const u = r / (ROWS - 1) // 0 far, 1 near
-        const v = Math.pow(u, 1.75)
-        const rowY = horizon + (h * 1.02 - horizon) * v
-        const sc = 0.45 + 1.15 * v
-        const nz = (1 - v) * 18 + t * speed
-
-        for (let c = 0; c < COLS; c++) {
-          const xn = (c / (COLS - 1)) * 2 - 1
-          const x = xn * 6
-          let n = height(x, nz)
-          // a broad ridge that rises on the right, like the reference
-          n += 1.2 * Math.exp(-((xn - 0.62) * (xn - 0.62)) / 0.14) * (0.7 + Math.sin(nz * 0.3) * 0.3)
-          const i = r * COLS + c
-          xs[i] = cx + xn * w * 0.78 * sc
-          ys[i] = rowY - (n + 0.6) * amp * sc
-        }
+      for (const d of dust) {
+        const a = 0.15 + 0.3 * (0.5 + 0.5 * Math.sin(t * d.tw + d.ph))
+        ctx.beginPath()
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(241, 217, 168, ${a})`
+        ctx.fill()
       }
-
-      ctx.lineWidth = 0.8
-      ctx.strokeStyle = "rgba(217, 163, 77, 0.3)"
-
-      // rows
-      ctx.beginPath()
-      for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
-          const i = r * COLS + c
-          if (c === 0) ctx.moveTo(xs[i], ys[i])
-          else ctx.lineTo(xs[i], ys[i])
-        }
-      }
-      ctx.stroke()
-
-      // columns
-      ctx.strokeStyle = "rgba(217, 163, 77, 0.2)"
-      ctx.beginPath()
-      for (let c = 0; c < COLS; c++) {
-        for (let r = 0; r < ROWS; r++) {
-          const i = r * COLS + c
-          if (r === 0) ctx.moveTo(xs[i], ys[i])
-          else ctx.lineTo(xs[i], ys[i])
-        }
-      }
-      ctx.stroke()
     }
 
-    const loop = () => {
-      if (visible) draw((performance.now() - start) / 1000)
+    const step = (dt: number) => {
+      for (let i = 0; i < leaves.length; i++) {
+        const l = leaves[i]
+        l.y += l.vy * dt
+        l.rot += l.vr * dt
+        l.flip += l.vf * dt
+        if (l.y - l.size > h) leaves[i] = makeLeaf(true)
+      }
+      for (const d of dust) {
+        d.y += d.vy * dt
+        if (d.y < -4) {
+          d.y = h + 4
+          d.x = rand(0, w)
+        }
+      }
+    }
+
+    let elapsed = 0
+    const loop = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.05)
+      last = now
+      if (visible) {
+        elapsed += dt
+        step(dt)
+        draw(elapsed)
+      }
       raf = requestAnimationFrame(loop)
     }
 

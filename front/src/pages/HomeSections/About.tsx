@@ -2,6 +2,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { Link } from "react-router-dom"
 
 const styles = `
 .about-item {
@@ -210,8 +211,20 @@ const About = () => {
         A taste of something special
       </p>
     </div>
+    
+<div className="flex justify-center">
+  <Link to="/about-us">
+  <button
+    className="hero-rise mt-9 inline-flex items-center gap-3 bg-[#d9a34d] px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-white transition-colors duration-300 hover:bg-[#bd8736]"
+    style={delay(1450)}
+  >
+    Discover more about us <span aria-hidden="true">↗</span>
+  </button>
+  </Link>
+</div>
   </div>
 </div>
+
 
       {/* Philosophy columns */}
       <div className="mx-auto max-w-7xl px-6 py-20 sm:px-10 sm:py-28 lg:px-16">

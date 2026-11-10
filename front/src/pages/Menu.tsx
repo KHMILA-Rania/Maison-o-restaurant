@@ -422,19 +422,22 @@ function CategorySection({ category }: { category: Category }) {
               />
 
               <div className="m-dish-inner py-9 sm:py-12">
-                <div className="flex items-baseline gap-4">
-                  <h3 className="m-name font-serif text-2xl leading-tight sm:text-3xl">
-                    {dish.name}
-                  </h3>
-                  <span
-                    aria-hidden="true"
-                    className="min-w-6 flex-1 translate-y-[-4px] border-b border-dotted border-white/20"
-                  />
-                  <span className="font-serif text-lg italic text-[#c5a66b] sm:text-xl">
-                    {CURRENCY}
-                    {dish.price}
-                  </span>
-                </div>
+                
+<div className="flex w-full min-w-0 items-baseline gap-2 sm:gap-4">
+  <h3 className="m-name min-w-0 font-serif text-xl leading-tight sm:text-3xl">
+    {dish.name}
+  </h3>
+
+  <span
+    aria-hidden="true"
+    className="min-w-2 flex-1 translate-y-[-4px] border-b border-dotted border-white/20"
+  />
+
+  <span className="shrink-0 whitespace-nowrap font-serif text-lg italic text-[#c5a66b] sm:text-xl">
+    {CURRENCY}{dish.price}
+  </span>
+</div>
+
 
                 <p className="mt-3 max-w-md text-xs leading-6 text-[#c1c2b7] sm:text-sm sm:leading-7">
                   {dish.desc}
